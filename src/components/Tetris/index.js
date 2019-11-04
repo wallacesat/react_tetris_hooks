@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { createStage } from '../../matriz';
+import { createStage, checkCollision } from '../../matriz';
 
 import { usePlayer } from '../../hooks/usePlayer';
 import { useStage } from '../../hooks/useStage';
@@ -11,31 +11,43 @@ import StartButton from '../StartButton';
 
 import { StyledTetrisWrapper, StyledTetris } from './styles';
 
-export default function Tetris() {
+const Tetris = () => {
   const [dropTime, setDropTime] = useState(null);
   const [gameOver, setGameOver] = useState(false);
 
   const [player, updatePlayerPos, resetPlayer] = usePlayer();
-  const [stage, setStage] = useStage(player);
+  const [stage, setStage] = useStage(player, resetPlayer);
 
-  function movePlayer(dir) {
-    updatePlayerPos({ x: dir, y: 0 });
-  }
+  const movePlayer = dir => {
+    if (!checkCollision(player, stage, { x: dir, y: 0 })) {
+      updatePlayerPos({ x: dir, y: 0 });
+    }
+  };
 
-  function startGame() {
+  const startGame = () => {
     setStage(createStage());
     resetPlayer();
-  }
+    setGameOver(false);
+  };
 
-  function drop() {
-    updatePlayerPos({ x: 0, y: 1, collided: false });
-  }
+  const drop = () => {
+    if (!checkCollision(player, stage, { x: 0, y: 1 })) {
+      updatePlayerPos({ x: 0, y: 1, collided: false });
+    } else {
+      if (player.pos.y < 1) {
+        console.log('GAME OVER!');
+        setGameOver(true);
+        setDropTime(null);
+      }
+      updatePlayerPos({ x: 0, y: 0, collided: true });
+    }
+  };
 
-  function dropPlayer() {
+  const dropPlayer = () => {
     drop();
-  }
+  };
 
-  function move({ keyCode }) {
+  const move = ({ keyCode }) => {
     if (!gameOver) {
       if (keyCode === 37) {
         movePlayer(-1);
@@ -47,7 +59,7 @@ export default function Tetris() {
         dropPlayer();
       }
     }
-  }
+  };
 
   return (
     <StyledTetrisWrapper role="button" tabIndex="0" onKeyDown={e => move(e)}>
@@ -68,4 +80,6 @@ export default function Tetris() {
       </StyledTetris>
     </StyledTetrisWrapper>
   );
-}
+};
+
+export default Tetris;
